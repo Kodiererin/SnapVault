@@ -1,32 +1,39 @@
-import face_recognition
 import os
-import shutil
+from config import inputFolder , outputFolder
+from faceDetection import processImage
+from fileOperations import createPersonFolder, moveImage
 
-input_folder = 'images'
-output_folder = 'output'
 
-# Array to store known faces and folders for each face
-facesKnown = []
-faceFolder = []
 
-def imageProcessing():
-    global facesKnown, faceFolder
+def imageProcess():
+    facesKnown = []
+    facesFolders = []
 
-    # Iterate over each image in the folder
-    for img in os.listdir(input_folder):
-        imagePath = os.path.join(input_folder, img)
+    for img in os.listdir(inputFolder):
+        imagePath = os.path.join(inputFolder, img)
+        print(f"Processing Image: {img}")
+        faceEncodings, faceLocations = processImage(imagePath)
 
-        print("Processing Image: ", imagePath)
 
-        # Load the image
-        image = face_recognition.load_image_file(imagePath)
+        if not faceEncodings:
+            print(f"No faces found in {img}.")
+            continue
 
-        # Find all face locations and encodings in the image
-        faceLocations = face_recognition.face_locations(image)
-        faceEncodings = face_recognition.face_encodings(image, faceLocations)
 
-       
-# Start the process
-print("Welcome to SnapVault") 
-print("Let's start recognizing the faces")
-imageProcessing()
+
+        for faceEncoding,faceLocation in zip(faceEncodings , faceLocations):
+            matchIndex , faceFolderName = createPersonFolder(facesKnown , faceEncoding , facesFolders)
+
+
+            if matchIndex is None:
+                facesKnown.append(faceEncoding)
+            
+            moveImage(imagePath , faceFolderName , img)
+
+    print(f"Processed images from {inputFolder} and organized into {outputFolder}.")
+
+
+if __name__ == "__main__":
+    print("Welcome to the SnapVault")
+    imageProcess()
+    print("SnapVault process completed.")
